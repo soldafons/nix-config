@@ -2,13 +2,52 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, ... }:
+{ config, pkgs, lib, inputs, ... }:
+
 
 {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
     ];
+
+  security.pki.certificateFiles = [];
+  services.openssh.enable = true;
+  security.pki.installCACerts = true;
+
+  environment.variables = {
+    SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+    NIX_SSL_CERT_FILE = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+  };
+
+  nix.settings.ssl-cert-file =
+    "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+
+  services.resolved.enable = true;
+  services.resolved.fallbackDns = [ "1.1.1.1" "8.8.8.8" ];
+  # opengl
+  hardware.graphics = {
+    enable = true;
+    enable32Bit = true;
+  };
+  # nvidia
+  services.xserver.videoDrivers = ["nvidia"];
+  hardware.nvidia.open = true;
+  hardware.nvidia.modesetting.enable = true;
+  hardware.nvidia.nvidiaSettings = true;
+  hardware.nvidia.powerManagement.enable = true;
+  nixpkgs.config.nvidia.acceptLicense = true;
+  hardware.nvidia.package = config.boot.kernelPackages.nvidiaPackages.production;
+
+  # steam
+  programs.steam.enable = true;
+  programs.steam.gamescopeSession.enable = true;
+  programs.gamemode.enable = true;
+  environment.sessionVariables = {
+    STEAM_EXTRA_COMPAT_TOOLS_PATHS =
+      "\${HOME}/.steam/root/compatibilitytools.d";
+  };
+
   # enable flakes
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
   # enable unfree pkgs
@@ -17,15 +56,6 @@
   services.mullvad-vpn.enable = true;
   # install fonts
   fonts.packages = with pkgs; [
-  noto-fonts
-  noto-fonts-cjk-sans
-  noto-fonts-color-emoji
-  liberation_ttf
-  fira-code
-  fira-code-symbols
-  mplus-outline-fonts.githubRelease
-  dina-font
-  proggyfonts
   nerd-fonts.jetbrains-mono
   _0xproto
   nerd-fonts.fantasque-sans-mono
@@ -46,7 +76,8 @@
 
   # Enable networking
   networking.networkmanager.enable = true;
-
+  networking.networkmanager.dns = "systemd-resolved";
+  hardware.bluetooth.enable = true;
   # Set your time zone.
   time.timeZone = "Europe/Kyiv";
 
@@ -114,8 +145,6 @@
 
   # Install firefox.
   programs.firefox.enable = true;
-  # Install steam
-  programs.steam.enable = true;
 
 
   # List packages installed in system profile. To search, run:
@@ -130,9 +159,7 @@
   cmatrix
   cowsay
   gparted
-  modrinth-app
   libreoffice
-  jetbrains.pycharm
   python314
   javaPackages.compiler.temurin-bin.jre-21
   fortune
@@ -142,6 +169,14 @@
   curl
   vim
   vesktop
+  pnpm
+  prismlauncher
+  protonup-ng
+  mangohud
+  krita
+  gimp
+  neovim
+  openssl
   ];
 
   # Some programs need SUID wrappers, can be configured further or are
